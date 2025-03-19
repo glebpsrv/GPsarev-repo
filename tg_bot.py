@@ -12,7 +12,7 @@ from docx import Document
 import re
 
 # Определение состояний
-DATE_INPUT, COST_INPUT, TERM_INPUT = range(3)
+DATE_INPUT, COST_INPUT, TERM_INPUT, BORROWER_NAME_INPUT, LENDER_NAME_INPUT = range(5)
 
 # Хранилище данных
 contract_data = {}
@@ -75,6 +75,16 @@ async def cost_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def term_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     contract_data['term'] = update.message.text
+    await update.message.reply_text("Введите ФИО заемщика:")
+    return BORROWER_NAME_INPUT
+
+async def borrower_name_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    contract_data['borrower_name'] = update.message.text
+    await update.message.reply_text("Введите ФИО займодателя:")
+    return LENDER_NAME_INPUT
+
+async def lender_name_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    contract_data['lender_name'] = update.message.text
     doc_path = generate_contract(contract_data)
     with open(doc_path, 'rb') as doc_file:
         await update.message.reply_document(doc_file)
@@ -93,7 +103,6 @@ def generate_contract(data) -> str:
     return file_name
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
     await update.message.reply_text("📄 Создание договора отменено. Используйте команду /start, чтобы начать заново.", reply_markup=None)
     return ConversationHandler.END
 
@@ -107,6 +116,8 @@ def main() -> None:
             DATE_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, date_input)],
             COST_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, cost_input)],
             TERM_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, term_input)],
+            BORROWER_NAME_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, borrower_name_input)],
+            LENDER_NAME_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, lender_name_input)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
